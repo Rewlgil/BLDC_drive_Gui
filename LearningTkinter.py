@@ -19,14 +19,14 @@ root.title("My GUI")            # set window title
 # root.geometry("500x500+0+0")    # set window size
 
 # myLabel1 = Label(root, text="Hello World!", font=20, fg="red", bg="yellow").pack()
-# # myLabel2 = Label(root, text="Test Programe", font=20, fg="red", bg="yellow").grid(row=0,column=1)
-# # myLabel3 = Label(root, text="Hi Rew", font=18, fg="white", bg="blue").place(x=200,y=50)
+# myLabel2 = Label(root, text="Test Programe", font=20, fg="red", bg="yellow").grid(row=0,column=1)
+# myLabel3 = Label(root, text="Hi Rew", font=18, fg="white", bg="blue").place(x=200,y=50)
 
-# # Text box
+# Text box
 # txt = StringVar()                       # string in text box
 # Entry(root, textvariable=txt).pack()    # text box
 
-# # Button
+# Button
 # def showMSG():
 #     print("func show MSG")
 #     msg = txt.get()                     # get string from text box
@@ -64,7 +64,7 @@ root.title("My GUI")            # set window title
 #     if confirm == 'yes':
 #         root.destroy()
 
-# # create menu item (sub menu)
+# create menu item (sub menu)
 # menuItem = Menu()
 # menuItem.add_command(label="New Window", command=showWindow)
 # menuItem.add_command(label="Open File")
@@ -72,7 +72,7 @@ root.title("My GUI")            # set window title
 # menuItem.add_command(label="About", command=aboutProgram)
 # menuItem.add_command(label="Exit", command=exitProgram)
 
-# # add main menu
+# add main menu
 # myMenu.add_cascade(label="File", menu=menuItem)
 # myMenu.add_cascade(label="Edit")
 # myMenu.add_cascade(label="view")
