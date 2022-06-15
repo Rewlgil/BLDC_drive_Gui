@@ -1,20 +1,74 @@
 from tkinter import *
 from tkinter import ttk
+import serial
+import serial.tools.list_ports
 
-from GUI import refresh
+def serialList():
+    return [p[0] for p in list(serial.tools.list_ports.comports())]
+
+def connectionSetted(event):
+    global port, rate
+    port = portChoice.get()
+    rate = rateChoice.get()
+    print(port, ",", rate)
+
+    if port == "No availabel port" or port == "Select port" or rate == "Select baud rate":
+        btnCon.configure(text="connect", state="disable")
+    else:
+        rate = int(rate)
+        if connectState == True:
+            if port != ser.port or rate != ser.baudrate:
+                disConnect()
+        btnCon.configure(text="connect", command=makeConnect, state="normal")
 
 def makeConnect():
-    print("connectted")
+    global ser, connectState
+    print("connectting to", port, rate)
+    if connectState == True:
+        ser.close()
+    ser = serial.Serial(port, rate, timeout=0.1)
+    if ser.is_open == False:
+        ser.open()
+
     statusLabel.configure(text="status: Connected", fg="#269900")
-    btnCon.configure(text="disconnect", command=disConnect, bg="#fc5203")
+    cmdEntry.configure(state="normal")
+    btnCon.configure(text="disconnect", command=disConnect)
+    connectState = True
 
 def disConnect():
-    print("disconnectted")
-    statusLabel.configure(text="status: disconnected", fg="#fc5203")
-    btnCon.configure(text="connect", command=makeConnect, bg="#269900")
+    global connectState
+    print("disconnect from", ser.port, ser.baudrate)
+    if connectState == True:
+        ser.close()
+        statusLabel.configure(text="status: disconnected", fg="#fc5203")
+        cmdEntry.configure(state="disable")
+        btnCon.configure(text="connect", command=makeConnect)
+    connectState = False
 
 def refresh():
+    global port
     print("refresh")
+    availablePort = serialList()
+
+    if connectState == True:
+        if ser.port not in availablePort:
+            disConnect()
+    
+    portCombo.configure(values=availablePort)
+    if availablePort == []:
+        print("no available port")
+        portChoice.set("No availabel port")
+        portCombo.configure(state="disable")
+        btnCon.configure(state="disable")
+    elif len(availablePort) == 1:
+        print("found", availablePort)
+        portCombo.configure(state="readonly")
+        portCombo.current(0)
+        port = availablePort[0]
+        connectionSetted("call")
+    else:
+        print("found", availablePort)
+        portCombo.configure(state="readonly")
 
 def readParam():
     print("read Parameter")
@@ -28,9 +82,9 @@ def checkParam():
 
 def readCMD(event):
     global cmdStr
-
     cmdStr = cmd.get()
-    # print(cmdStr)
+    print(">", cmdStr)
+    ser.write(cmdStr.encode('utf_8'))
     textBox.configure(state="normal")
     textBox.insert(END, '>' + cmdStr + '\n')
     textBox.configure(state="disable")
@@ -38,33 +92,66 @@ def readCMD(event):
     textBox.see("end")
 
 def mainLoop():
-    pass
+    if connectState == True:
+        # ser.flush()
+        if ser.inWaiting() > 0:
+            answer=""
+            while ser.inWaiting() > 0:
+                answer += str(ser.readline()).replace("\\r","").replace("\\n","").replace("'","").replace("b","")
+            print(answer)
+            textBox.configure(state="normal")
+            textBox.insert(END, answer + '\n')
+            textBox.configure(state="disable")
+
+    root.after(100, mainLoop)
 
 def main():
-    global portCombo, rateCombo, btnRefresh, btnCon, statusLabel, textBox, cmdEntry, cmd
+    global root
+    global portCombo, btnCon, statusLabel
+    global portChoice, rateChoice
+    global textBox, cmdEntry, cmd
+    global connectState, port
 
     root = Tk()
     root.title("BLDC driver config")
 
+    connectState = False
+
     # row 0 port setting
     Label(root, text="COM Port").grid(row=0, column=0)
-    availablePort = ["COM1", "COM2"]
-    portChoice = StringVar(value="No availabel port")
+    availablePort = serialList()
+    portChoice = StringVar(value="Select port")
     portCombo = ttk.Combobox(textvariable=portChoice, values=availablePort)
+
+    if availablePort == []:
+        print("no available port")
+        portChoice.set("No availabel port")
+        portCombo.configure(state="disable")
+    elif len(availablePort) == 1:
+        print("found", availablePort)
+        portCombo.configure(state="readonly")
+        portCombo.current(0)
+        port = availablePort[0]
+    else:
+        print("found", availablePort)
+        portCombo.configure(state="readonly")
+
+    portCombo.bind("<<ComboboxSelected>>", connectionSetted)
     portCombo.grid(row=0, column=1)
 
     # row 1 baud rate setting
     Label(root, text="baud rate").grid(row=1, column=0)
     rateChoice = StringVar(value="Select baud rate")
     rateCombo = ttk.Combobox(textvariable=rateChoice, state="readonly")
-    rateCombo["value"] = [2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600, 115200]
+    rateCombo["value"] = [9600, 115200, 1000000, 2000000]
+    rateCombo.bind("<<ComboboxSelected>>", connectionSetted)
     rateCombo.grid(row=1, column=1)
 
     # row 2 button
     btnRefresh = Button(text="Refresh", command=refresh)
     btnRefresh.grid(row=2, column=0)
 
-    btnCon = Button(text="Connect", command=makeConnect)
+    btnCon = Button(text="Connect", command=makeConnect, state="disable")
     btnCon.grid(row=2, column=1)
 
     statusLabel = Label(text="status: disconnected", fg="#fc5203")
@@ -129,16 +216,17 @@ def main():
     btnWrite = Button(text="Write parameter", command=writeParam)
     btnWrite.grid(row=13, column=1)
 
-    # row 14 ~ 16 debug terminal
-    Label(text="Debugger").grid(row=14, column=0)
+    # row 14 ~ 16 serial monitor
+    Label(text="Serial monitor").grid(row=14, column=0)
     textBox = Text(width=40, heigh=5, state="disable")
     textBox.grid(row=15, column=0, columnspan=3)
 
     cmd = StringVar()
-    cmdEntry = Entry(textvariable=cmd, width=53)
+    cmdEntry = Entry(textvariable=cmd, width=53, state="disable")
     cmdEntry.bind('<Return>', readCMD)
     cmdEntry.grid(row=16, column=0, columnspan=3)
 
+    root.after(100, mainLoop)
     root.mainloop()
 
 if __name__ == '__main__':

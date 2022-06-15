@@ -1,1 +1,1 @@
-ser = serial.Serial()
+btnCon.configure(text="connect", bg="white", state="disable")
