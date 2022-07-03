@@ -1,1 +1,0 @@
-btnCon.configure(text="connect", bg="white", state="disable")
