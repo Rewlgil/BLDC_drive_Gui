@@ -1,0 +1,33 @@
+Motor ID
+Control Mode
+Voltage Source
+Current Limit
+Temperature Limit
+Motor Pole Pair
+Motor Direction
+Rotor Offset CW
+Rotor Offset CCW
+Shaft Offset
+Gear Ratio
+PWM Resolution
+Encoder Direction
+Time Debug
+Voltage Debug
+Resolution Debug
+Maximum Velocity
+Minimum Velocity
+Velocity Limit
+Acceleration Limit
+Deceleration Limit
+Position Control P Gain
+Position Control I Gain
+Velocity Control P Gain
+Velocity Control I Gain
+
+Motor Enable
+Open Loop Drive
+Close Loop Drive
+Get Raw Angle
+System
+Get All Config Dat
+Go to Control Mode
