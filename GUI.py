@@ -112,6 +112,8 @@ def readParam():
     param_read = list()
     print("read Parameter")
     cmdOut = "/ 31 1\n"
+    print(cmdOut, end='')
+    put2TextBox(">> " + cmdOut)
     ser.write(cmdOut.encode('utf_8'))
     
     start_waiting = time.time()
@@ -120,7 +122,6 @@ def readParam():
         if time.time() - start_waiting > 0.5:
             print("Time out waiting no response")
             put2TextBox("Time out waiting no response\n")
-            btnRead.configure(state="normal")
             return
 
     if ser.inWaiting() > 0:
@@ -163,7 +164,9 @@ def writeParam():
             print(cmdOut, end='')
             put2TextBox(">> " + cmdOut)
             ser.write(cmdOut.encode('utf_8'))
+            time.sleep(0.1)
 
+        time.sleep(0.1)
         cmdOut = "/ 30 1\n"
         ser.write(cmdOut.encode('utf_8'))
         print(cmdOut, end='')
@@ -242,11 +245,13 @@ def MotorEn():
             MotorEnState = True
 
 def EnterControlMode():
+    global config_mode
+
     actionCMD(32, 1)
     btnRead.configure(state="disable")
     btnWrite.configure(state="disable")
     # btnRebt.configure(state="disable")
-    # btnMotor.configure(text="Enable", state="disable")
+    btnMotor.configure(text="Enable", state="disable")
     btnCtrMod.configure(state="disable")
     btnOPdiv1.configure(state="disable")
     btnOPdiv2.configure(state="disable")
@@ -254,11 +259,22 @@ def EnterControlMode():
     btnCLdiv2.configure(state="disable")
     btnGetAng.configure(state="disable")
     btnGetAngH.configure(state="disable")
+    config_mode = False
 
 def reboot():
-    global MotorEnState
+    global MotorEnState, config_mode
 
-    actionCMD(30, 0)
+    if config_mode == True:
+        actionCMD(30, 0)
+    else: # control mode
+        if connectState == True:
+            cmdOut = "* -1\n"
+            print(cmdOut, end='')
+            put2TextBox(cmdOut)
+            ser.write(cmdOut.encode('utf_8'))
+            config_mode = True
+
+
     btnMotor.configure(text="Enable", state="normal")
     MotorEnState = False
     
@@ -316,7 +332,7 @@ def main():
     global btnRead, btnWrite, btnRebt
     global btnMotor, btnCtrMod, btnOPdiv1, btnOPdiv2
     global btnCLdiv1, btnCLdiv2, btnGetAng, btnGetAngH
-    global MotorEnState
+    global MotorEnState, config_mode
 
     root = Tk()
     root.title("BLDC driver config")
@@ -324,6 +340,7 @@ def main():
 
     connectState = False
     MotorEnState = False
+    config_mode = True
 
     # ------------------------ Config Connection -----------------------
     frmCfgSer = ttk.LabelFrame(root, text="Config Connection")
